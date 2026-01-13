@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GOMI_TRASH_SYSTEM</title>
+    <style>
+        /* FIXED: Changed to min-height and used Flexbox to center the box */
+        body { 
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            color: #fff; 
+            font-family: 'Courier New', monospace; 
+            margin: 0;
+            min-height: 100vh; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Glassmorphism container - width added to prevent squishing */
+        .container { 
+            background: rgba(0, 0, 0, 0.8); 
+            backdrop-filter: blur(15px);
+            border: 3px solid #ff00ff; 
+            padding: 40px; 
+            border-radius: 30px;
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.3);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 { color: #00ffff; text-shadow: 2px 2px #ff00ff; margin-bottom: 25px; }
+
+        .search-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        input { 
+            background: rgba(255, 255, 255, 0.1); 
+            border: 2px solid #00ffff; 
+            color: #fff; 
+            padding: 12px; 
+            width: 250px; 
+            outline: none; 
+            border-radius: 10px;
+            font-size: 1.1em;
+        }
+
+        /* FUZZY SUGGESTIONS: Styling the datalist options */
+        datalist {
+            background-color: #222;
+            color: #00ffff;
+        }
+
+        button, .spirit-btn { 
+            padding: 12px 25px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            border-radius: 10px;
+            transition: 0.3s;
+            border: none;
+            font-size: 1em;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        button { background: #00ffff; color: #000; }
+        button:hover { background: #fff; transform: scale(1.05); }
+
+        .spirit-btn { background: #ff00ff; color: #fff; }
+        .spirit-btn:hover { background: #fff; color: #ff00ff; transform: scale(1.05); }
+
+        /* RESULT BOX: Enhanced for Fuzzy match display */
+        .result-box { 
+            margin-top: 20px; 
+            border-top: 2px dashed #ff00ff; 
+            padding-top: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+        }
+
+        .history { margin-top: 30px; text-align: left; font-size: 0.9em; color: #00ffff; }
+        ul { list-style: none; padding: 0; }
+        li { color: #ff00ff; padding: 5px 0; }
+        li::before { content: "✨ "; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p style="font-size: 0.7em; color: #00ffff; text-align: right; margin-top: 0;">
+            SYSTEM_STATUS: ONLINE | SCANS: {{ total_count }}
+        </p>
+        <h1>GOMI_SYSTEM_v1.2</h1>
+        
+        <div class="search-row">
+            <form action="/" method="POST" style="display: flex; gap: 10px;">
+                <input type="text" name="search" id="search-input" list="trash-options" 
+                       placeholder="SCAN TRASH..." value="{{ query }}" autocomplete="off">
+                
+                <datalist id="trash-options">
+                    </datalist>
+
+                <button type="submit">SCAN</button>
+            </form>
+            <a href="/fortune" class="spirit-btn">ASK SPIRITS</a>
+        </div>
+
+        {% if result %}
+        <div class="result-box">
+            <p style="color: #00ffff; margin-top: 0;">> SCANNING: {{ query|upper }}</p>
+            <p style="font-size: 1.3em; font-weight: bold;">{{ result }}</p>
+        </div>
+        {% endif %}
+
+        <div class="history">
+            <p style="font-weight: bold;">> RECENT_VIBES:</p>
+            <ul>
+                {% for item in history %}
+                    <li>scanned_{{ item }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('search-input');
+        const dataList = document.getElementById('trash-options');
+
+        searchInput.addEventListener('input', async (e) => {
+            const val = e.target.value.trim();
+            if (val.length < 1) return;
+
+            try {
+                const response = await fetch(`/suggest?q=${encodeURIComponent(val)}`);
+                const items = await response.json();
+                
+                dataList.innerHTML = '';
+                items.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item;
+                    dataList.appendChild(option);
+                });
+            } catch (err) {
+                console.log("Suggestion error:", err);
+            }
+        });
+    </script>
+</body>
+</html>
